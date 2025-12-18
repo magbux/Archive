@@ -1,17 +1,18 @@
 --[[ 
-    ARCHIVE UI LIBRARY
+    ARCHIVE UI LIBRARY V2
     Premium, Dark-Themed User Interface
+    Added: ColorPicker, Notifications, Labels, Improved Animations
 ]]
 
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 local LocalPlayer = game:GetService("Players").LocalPlayer
-local Mouse = LocalPlayer:GetMouse()
+local CoreGui = game:GetService("CoreGui")
 
 local Archive = {}
 
--- // Utility: Draggable Logic
+-- // Utility: Draggable
 local function MakeDraggable(topbarobject, object)
 	local Dragging = nil
 	local DragInput = nil
@@ -53,7 +54,7 @@ end
 
 -- // Utility: Tweening
 local function Tween(instance, properties, time)
-	TweenService:Create(instance, TweenInfo.new(time or 0.2, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), properties):Play()
+	TweenService:Create(instance, TweenInfo.new(time or 0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), properties):Play()
 end
 
 -- // Main Library
@@ -68,28 +69,43 @@ function Archive.new(Name)
 	local SidebarPadding = Instance.new("UIPadding")
 	local Title = Instance.new("TextLabel")
 	local Pages = Instance.new("Frame")
+	local NotificationHolder = Instance.new("Frame")
+    local NotificationLayout = Instance.new("UIListLayout")
 
 	-- Theme Colors
 	local Theme = {
-		Background = Color3.fromRGB(18, 18, 18),
-		Sidebar = Color3.fromRGB(24, 24, 24),
-		Element = Color3.fromRGB(32, 32, 32),
+		Background = Color3.fromRGB(16, 16, 16),
+		Sidebar = Color3.fromRGB(22, 22, 22),
+		Element = Color3.fromRGB(28, 28, 28),
 		Text = Color3.fromRGB(240, 240, 240),
-		TextDim = Color3.fromRGB(160, 160, 160),
-		Accent = Color3.fromRGB(255, 255, 255), -- Premium White/Silver Accent
-		Border = Color3.fromRGB(45, 45, 45)
+		TextDim = Color3.fromRGB(140, 140, 140),
+		Accent = Color3.fromRGB(255, 255, 255),
+		Border = Color3.fromRGB(40, 40, 40)
 	}
 
-	-- Core Setup
+	-- Setup
 	UI.Name = "ArchiveUI"
-	UI.Parent = game.CoreGui
+	UI.Parent = CoreGui
 	UI.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+    -- Notifications Holder
+    NotificationHolder.Name = "Notifications"
+    NotificationHolder.Parent = UI
+    NotificationHolder.BackgroundTransparency = 1
+    NotificationHolder.Position = UDim2.new(1, -220, 1, -20)
+    NotificationHolder.AnchorPoint = Vector2.new(1, 1)
+    NotificationHolder.Size = UDim2.new(0, 200, 1, 0)
+    
+    NotificationLayout.Parent = NotificationHolder
+    NotificationLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    NotificationLayout.VerticalAlignment = Enum.VerticalAlignment.Bottom
+    NotificationLayout.Padding = UDim.new(0, 5)
 
 	Main.Name = "Main"
 	Main.Parent = UI
 	Main.BackgroundColor3 = Theme.Background
 	Main.Position = UDim2.new(0.5, -300, 0.5, -200)
-	Main.Size = UDim2.new(0, 600, 0, 400)
+	Main.Size = UDim2.new(0, 600, 0, 420)
 	Main.ClipsDescendants = true
 
 	MainStroke.Parent = Main
@@ -102,7 +118,6 @@ function Archive.new(Name)
 
 	MakeDraggable(Main, Main)
 
-	-- Sidebar Setup
 	Sidebar.Name = "Sidebar"
 	Sidebar.Parent = Main
 	Sidebar.BackgroundColor3 = Theme.Sidebar
@@ -112,7 +127,7 @@ function Archive.new(Name)
 	SidebarCorner.CornerRadius = UDim.new(0, 8)
 	SidebarCorner.Parent = Sidebar
 
-	-- Flat edge on right of sidebar
+	-- Fix right side of sidebar
 	local SidebarFix = Instance.new("Frame")
 	SidebarFix.Parent = Sidebar
 	SidebarFix.BorderSizePixel = 0
@@ -129,7 +144,6 @@ function Archive.new(Name)
 	SidebarPadding.PaddingLeft = UDim.new(0, 12)
 	SidebarPadding.PaddingRight = UDim.new(0, 12)
 
-	-- Title
 	Title.Name = "Title"
 	Title.Parent = Main
 	Title.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
@@ -143,7 +157,6 @@ function Archive.new(Name)
 	Title.TextXAlignment = Enum.TextXAlignment.Left
 	Title.TextTransparency = 0.2
 
-	-- Pages Container
 	Pages.Name = "Pages"
 	Pages.Parent = Main
 	Pages.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
@@ -155,14 +168,74 @@ function Archive.new(Name)
 		Tabs = {}
 	}
 
-	function Window:addPage(Name, Icon)
+    function Window:Notify(Title, Text, Duration)
+        local Frame = Instance.new("Frame")
+        local FrameCorner = Instance.new("UICorner")
+        local FrameStroke = Instance.new("UIStroke")
+        local NTitle = Instance.new("TextLabel")
+        local NText = Instance.new("TextLabel")
+
+        Frame.Name = "Notification"
+        Frame.Parent = NotificationHolder
+        Frame.BackgroundColor3 = Theme.Element
+        Frame.Size = UDim2.new(1, 0, 0, 60)
+        Frame.BackgroundTransparency = 1 -- Animate in
+        
+        FrameCorner.CornerRadius = UDim.new(0, 6)
+        FrameCorner.Parent = Frame
+        
+        FrameStroke.Parent = Frame
+        FrameStroke.Color = Theme.Border
+        FrameStroke.Transparency = 1 -- Animate in
+        
+        NTitle.Parent = Frame
+        NTitle.BackgroundTransparency = 1
+        NTitle.Position = UDim2.new(0, 10, 0, 5)
+        NTitle.Size = UDim2.new(1, -20, 0, 20)
+        NTitle.Font = Enum.Font.GothamBold
+        NTitle.Text = Title
+        NTitle.TextColor3 = Theme.Text
+        NTitle.TextSize = 13
+        NTitle.TextXAlignment = Enum.TextXAlignment.Left
+        NTitle.TextTransparency = 1
+        
+        NText.Parent = Frame
+        NText.BackgroundTransparency = 1
+        NText.Position = UDim2.new(0, 10, 0, 25)
+        NText.Size = UDim2.new(1, -20, 0, 30)
+        NText.Font = Enum.Font.Gotham
+        NText.Text = Text
+        NText.TextColor3 = Theme.TextDim
+        NText.TextSize = 12
+        NText.TextXAlignment = Enum.TextXAlignment.Left
+        NText.TextYAlignment = Enum.TextYAlignment.Top
+        NText.TextTransparency = 1
+        NText.TextWrapped = true
+
+        -- Animation In
+        Tween(Frame, {BackgroundTransparency = 0.1})
+        Tween(FrameStroke, {Transparency = 0.5})
+        Tween(NTitle, {TextTransparency = 0})
+        Tween(NText, {TextTransparency = 0})
+
+        task.delay(Duration or 3, function()
+            -- Animation Out
+            Tween(Frame, {BackgroundTransparency = 1})
+            Tween(FrameStroke, {Transparency = 1})
+            Tween(NTitle, {TextTransparency = 1})
+            Tween(NText, {TextTransparency = 1})
+            wait(0.3)
+            Frame:Destroy()
+        end)
+    end
+
+	function Window:addPage(Name)
 		local TabButton = Instance.new("TextButton")
 		local TabCorner = Instance.new("UICorner")
 		local Page = Instance.new("ScrollingFrame")
 		local PageLayout = Instance.new("UIListLayout")
 		local PagePadding = Instance.new("UIPadding")
 
-		-- Tab Button
 		TabButton.Name = Name
 		TabButton.Parent = Sidebar
 		TabButton.BackgroundColor3 = Theme.Element
@@ -177,7 +250,6 @@ function Archive.new(Name)
 		TabCorner.CornerRadius = UDim.new(0, 6)
 		TabCorner.Parent = TabButton
 
-		-- Page Frame
 		Page.Name = Name
 		Page.Parent = Pages
 		Page.Active = true
@@ -199,7 +271,6 @@ function Archive.new(Name)
 		PagePadding.PaddingRight = UDim.new(0, 5)
 		PagePadding.PaddingBottom = UDim.new(0, 5)
 
-		-- Tab Selection Logic
 		local function UpdateTabs()
 			for _, v in pairs(Window.Tabs) do
 				Tween(v.Button, {BackgroundTransparency = 1, TextColor3 = Theme.TextDim})
@@ -211,7 +282,6 @@ function Archive.new(Name)
 
 		TabButton.MouseButton1Click:Connect(UpdateTabs)
 		
-		-- Hover Effects
 		TabButton.MouseEnter:Connect(function()
 			if Page.Visible == false then
 				Tween(TabButton, {TextColor3 = Theme.Text})
@@ -242,7 +312,7 @@ function Archive.new(Name)
 
 			Section.Name = Name
 			Section.Parent = Page
-			Section.BackgroundColor3 = Theme.Sidebar -- Slightly distinct from background
+			Section.BackgroundColor3 = Theme.Sidebar
 			Section.Size = UDim2.new(1, -6, 0, 30) 
 			Section.ClipsDescendants = true
 
@@ -293,6 +363,26 @@ function Archive.new(Name)
 
 			local SectionFuncs = {}
 
+            -- // LABEL
+            function SectionFuncs:addLabel(Text)
+                local LabelFrame = Instance.new("Frame")
+                local LabelText = Instance.new("TextLabel")
+                
+                LabelFrame.Parent = Container
+                LabelFrame.BackgroundTransparency = 1
+                LabelFrame.Size = UDim2.new(1, 0, 0, 20)
+                
+                LabelText.Parent = LabelFrame
+                LabelText.BackgroundTransparency = 1
+                LabelText.Size = UDim2.new(1, 0, 1, 0)
+                LabelText.Font = Enum.Font.Gotham
+                LabelText.Text = Text
+                LabelText.TextColor3 = Theme.TextDim
+                LabelText.TextSize = 12
+                LabelText.TextXAlignment = Enum.TextXAlignment.Left
+            end
+
+            -- // BUTTON
 			function SectionFuncs:addButton(Name, Callback)
 				Callback = Callback or function() end
 				local Button = Instance.new("TextButton")
@@ -318,12 +408,8 @@ function Archive.new(Name)
 				ButtonStroke.Transparency = 0.5
 				ButtonStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 
-				Button.MouseEnter:Connect(function()
-					Tween(Button, {BackgroundColor3 = Color3.fromRGB(45,45,45)})
-				end)
-				Button.MouseLeave:Connect(function()
-					Tween(Button, {BackgroundColor3 = Theme.Element})
-				end)
+				Button.MouseEnter:Connect(function() Tween(Button, {BackgroundColor3 = Color3.fromRGB(45,45,45)}) end)
+				Button.MouseLeave:Connect(function() Tween(Button, {BackgroundColor3 = Theme.Element}) end)
 				Button.MouseButton1Click:Connect(function()
 					Callback()
 					Tween(Button, {TextSize = 10}, 0.1)
@@ -332,6 +418,7 @@ function Archive.new(Name)
 				end)
 			end
 
+            -- // TOGGLE
 			function SectionFuncs:addToggle(Name, Default, Callback)
 				Callback = Callback or function() end
 				local Toggled = Default or false
@@ -378,10 +465,9 @@ function Archive.new(Name)
 				CheckCorner.CornerRadius = UDim.new(1, 0)
 				CheckCorner.Parent = CheckFrame
 				
-				-- The dot inside the toggle
 				CheckCircle.Parent = CheckFrame
 				CheckCircle.BackgroundColor3 = Theme.TextDim
-				CheckCircle.Position = UDim2.new(0, 2, 0.5, -8) -- State False
+				CheckCircle.Position = UDim2.new(0, 2, 0.5, -8)
 				CheckCircle.Size = UDim2.new(0, 16, 0, 16)
 				
 				CircleCorner.CornerRadius = UDim.new(1, 0)
@@ -406,6 +492,7 @@ function Archive.new(Name)
 				end)
 			end
 
+            -- // SLIDER
 			function SectionFuncs:addSlider(Name, Default, Min, Max, Callback)
 				Callback = Callback or function() end
 				local SliderFrame = Instance.new("Frame")
@@ -501,6 +588,7 @@ function Archive.new(Name)
 				end)
 			end
 
+            -- // DROPDOWN
 			function SectionFuncs:addDropdown(Name, List, Default, Callback)
 				Callback = Callback or function() end
 				local Dropdown = Instance.new("Frame")
@@ -588,13 +676,8 @@ function Archive.new(Name)
 						ItemCorner.CornerRadius = UDim.new(0, 4)
 						ItemCorner.Parent = ItemBtn
 						
-						ItemBtn.MouseEnter:Connect(function()
-							Tween(ItemBtn, {BackgroundTransparency = 0, TextColor3 = Theme.Text})
-						end)
-						
-						ItemBtn.MouseLeave:Connect(function()
-							Tween(ItemBtn, {BackgroundTransparency = 1, TextColor3 = Theme.TextDim})
-						end)
+						ItemBtn.MouseEnter:Connect(function() Tween(ItemBtn, {BackgroundTransparency = 0, TextColor3 = Theme.Text}) end)
+						ItemBtn.MouseLeave:Connect(function() Tween(ItemBtn, {BackgroundTransparency = 1, TextColor3 = Theme.TextDim}) end)
 						
 						ItemBtn.MouseButton1Click:Connect(function()
 							Open = false
@@ -621,6 +704,7 @@ function Archive.new(Name)
 				end)
 			end
 			
+            -- // KEYBIND
 			function SectionFuncs:addKeybind(Name, Default, Callback)
 				Callback = Callback or function() end
 				local KeybindFrame = Instance.new("Frame")
@@ -685,6 +769,166 @@ function Archive.new(Name)
 					end
 				end)
 			end
+
+            -- // COLOR PICKER
+            function SectionFuncs:addColorPicker(Name, Default, Callback)
+                Callback = Callback or function() end
+                local Color3Value = Default or Color3.fromRGB(255, 255, 255)
+                
+                local PickerFrame = Instance.new("Frame")
+                local PickerCorner = Instance.new("UICorner")
+                local Title = Instance.new("TextLabel")
+                local Display = Instance.new("TextButton")
+                local DisplayCorner = Instance.new("UICorner")
+                local ButtonStroke = Instance.new("UIStroke")
+                
+                local ExpandFrame = Instance.new("Frame")
+                local HueSlide = Instance.new("ImageButton")
+                local HueCorner = Instance.new("UICorner")
+                local HueGrad = Instance.new("UIGradient")
+                local SatSlide = Instance.new("ImageButton")
+                local SatCorner = Instance.new("UICorner")
+                local SatGrad = Instance.new("UIGradient")
+                local ValSlide = Instance.new("ImageButton")
+                local ValCorner = Instance.new("UICorner")
+                local ValGrad = Instance.new("UIGradient")
+
+                PickerFrame.Name = Name
+                PickerFrame.Parent = Container
+                PickerFrame.BackgroundColor3 = Theme.Element
+                PickerFrame.Size = UDim2.new(1, 0, 0, 32)
+                PickerFrame.ClipsDescendants = true
+
+                PickerCorner.CornerRadius = UDim.new(0, 4)
+                PickerCorner.Parent = PickerFrame
+                
+                ButtonStroke.Parent = PickerFrame
+                ButtonStroke.Color = Theme.Border
+                ButtonStroke.Thickness = 1
+                ButtonStroke.Transparency = 0.5
+
+                Title.Parent = PickerFrame
+                Title.BackgroundTransparency = 1
+                Title.Position = UDim2.new(0, 10, 0, 0)
+                Title.Size = UDim2.new(1, -50, 0, 32)
+                Title.Font = Enum.Font.Gotham
+                Title.Text = Name
+                Title.TextColor3 = Theme.Text
+                Title.TextSize = 12
+                Title.TextXAlignment = Enum.TextXAlignment.Left
+
+                Display.Parent = PickerFrame
+                Display.BackgroundColor3 = Color3Value
+                Display.Position = UDim2.new(1, -40, 0, 6)
+                Display.Size = UDim2.new(0, 30, 0, 20)
+                Display.Text = ""
+                Display.AutoButtonColor = false
+
+                DisplayCorner.CornerRadius = UDim.new(0, 4)
+                DisplayCorner.Parent = Display
+
+                -- Expand Area
+                ExpandFrame.Parent = PickerFrame
+                ExpandFrame.BackgroundTransparency = 1
+                ExpandFrame.Position = UDim2.new(0, 10, 0, 35)
+                ExpandFrame.Size = UDim2.new(1, -20, 0, 60)
+
+                -- Helper to create slider
+                local function CreateSlider(parent, gradInfo, yPos)
+                    local Slider = Instance.new("ImageButton")
+                    local Corn = Instance.new("UICorner")
+                    local Grad = Instance.new("UIGradient")
+                    
+                    Slider.Parent = parent
+                    Slider.BackgroundColor3 = Color3.new(1,1,1)
+                    Slider.Position = UDim2.new(0, 0, 0, yPos)
+                    Slider.Size = UDim2.new(1, 0, 0, 10)
+                    Slider.AutoButtonColor = false
+                    
+                    Corn.CornerRadius = UDim.new(0, 2)
+                    Corn.Parent = Slider
+                    
+                    Grad.Color = gradInfo
+                    Grad.Parent = Slider
+                    return Slider
+                end
+
+                local h, s, v = Color3.toHSV(Color3Value)
+
+                -- Hue Slider
+                local HueSeq = ColorSequence.new{
+                    ColorSequenceKeypoint.new(0, Color3.fromRGB(255,0,0)),
+                    ColorSequenceKeypoint.new(0.16, Color3.fromRGB(255,255,0)),
+                    ColorSequenceKeypoint.new(0.33, Color3.fromRGB(0,255,0)),
+                    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0,255,255)),
+                    ColorSequenceKeypoint.new(0.66, Color3.fromRGB(0,0,255)),
+                    ColorSequenceKeypoint.new(0.83, Color3.fromRGB(255,0,255)),
+                    ColorSequenceKeypoint.new(1, Color3.fromRGB(255,0,0))
+                }
+                local HueBtn = CreateSlider(ExpandFrame, HueSeq, 0)
+
+                -- Saturation Slider
+                local SatSeq = ColorSequence.new(Color3.fromRGB(255,255,255), Color3.fromHSV(h, 1, v))
+                local SatBtn = CreateSlider(ExpandFrame, SatSeq, 15)
+
+                -- Value Slider
+                local ValSeq = ColorSequence.new(Color3.fromRGB(0,0,0), Color3.fromRGB(255,255,255)) -- Updated dynamic
+                local ValBtn = CreateSlider(ExpandFrame, ValSeq, 30)
+
+                local Open = false
+                
+                Display.MouseButton1Click:Connect(function()
+                    Open = not Open
+                    if Open then
+                        Tween(PickerFrame, {Size = UDim2.new(1, 0, 0, 80)})
+                    else
+                        Tween(PickerFrame, {Size = UDim2.new(1, 0, 0, 32)})
+                    end
+                end)
+
+                -- Update Loop
+                local function UpdateColor()
+                    Color3Value = Color3.fromHSV(h, s, v)
+                    Display.BackgroundColor3 = Color3Value
+                    -- Update gradients
+                    SatBtn.UIGradient.Color = ColorSequence.new(Color3.fromRGB(255,255,255), Color3.fromHSV(h, 1, v))
+                    ValBtn.UIGradient.Color = ColorSequence.new(Color3.fromRGB(0,0,0), Color3.fromHSV(h, s, 1))
+                    Callback(Color3Value)
+                end
+
+                -- Logic for Dragging
+                local function HandleDrag(btn, type)
+                    local Dragging = false
+                    btn.InputBegan:Connect(function(input)
+                        if input.UserInputType == Enum.UserInputType.MouseButton1 then Dragging = true end
+                    end)
+                    btn.InputEnded:Connect(function(input)
+                        if input.UserInputType == Enum.UserInputType.MouseButton1 then Dragging = false end
+                    end)
+                    UserInputService.InputChanged:Connect(function(input)
+                        if Dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+                            local pct = math.clamp((input.Position.X - btn.AbsolutePosition.X) / btn.AbsoluteSize.X, 0, 1)
+                            if type == "H" then h = pct
+                            elseif type == "S" then s = pct
+                            elseif type == "V" then v = pct end
+                            UpdateColor()
+                        end
+                    end)
+                     -- Click support
+                    btn.MouseButton1Down:Connect(function()
+                        Dragging = true
+                        local pct = math.clamp((Mouse.X - btn.AbsolutePosition.X) / btn.AbsoluteSize.X, 0, 1)
+                        if type == "H" then h = pct
+                        elseif type == "S" then s = pct
+                        elseif type == "V" then v = pct end
+                        UpdateColor()
+                    end)
+                end
+
+                HandleDrag(HueBtn, "H")
+                HandleDrag(SatBtn, "S")
+                HandleDrag(ValBtn, "V")
+            end
 
 			return SectionFuncs
 		end
